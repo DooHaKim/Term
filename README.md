@@ -6,4 +6,4 @@
 2. word_set.txt는 랜덤하게 얻어진 단어 5000여개가 저장되어 있음.
 3. document.txt는 word_set에서 랜덤하게 단어를 조합하여 1천여개의 단어를 가진 행 1000개를 생성함.
 4. map을 활용하여 검색기를 구현.
-5. 실행파일 및 영상은 [http://doohaproject.tistory.com/12](블로그)에서 확인 가능
+5. 실행파일 및 영상은 [블로그](http://doohaproject.tistory.com/12)에서 확인 가능

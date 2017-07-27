@@ -157,7 +157,6 @@ struct hash_chain {
 
 
 #pragma comment(lib,"winmm.lib")
-
 typedef std::map<int, std::vector<hash_chain>> Mymap;
 
 void main() {

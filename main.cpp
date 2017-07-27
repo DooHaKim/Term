@@ -17,22 +17,22 @@
 using namespace std;
 
 template<typename Out>
-void split(const std::string &s, char delim, Out result) {
-	std::stringstream ss;
+void split(const std::wstring &s, wchar_t delim, Out result) {
+	std::wstringstream ss;
 	ss.str(s);
-	std::string item;
+	std::wstring item;
 	while (std::getline(ss, item, delim)) {
 		*(result++) = item;
 	}
 }
 
-std::vector<std::string> split(const std::string &s, char delim) {
-	std::vector<std::string> elems;
+std::vector<std::wstring> split(const std::wstring &s, wchar_t delim) {
+	std::vector<std::wstring> elems;
 	split(s, delim, std::back_inserter(elems));
 	return elems;
 }
 
-static inline std::string &rtrim(std::string &s) {
+static inline std::wstring &rtrim(std::wstring &s) {
 	s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
 	return s;
 }
@@ -40,38 +40,18 @@ static inline std::string &rtrim(std::string &s) {
 class HashItem{
 public:
 	int line;
-	vector<string> sentence;
-	std::unordered_map<std::string, int> hash_sentence;
+	std::vector<std::wstring> sentence;
 
-	void print_key_word(vector<string> key_word);
+	void print_key_word(std::vector<std::wstring> key_word);
 
-	HashItem(int S_line, vector<string> split_word) {
-		line = S_line;
+	HashItem(int S_line, std::vector<std::wstring> split_word) {
+		line = S_line + 1;
 		sentence = split_word;
-		for (int i = 0; i < sentence.size(); i++) {
-			hash_sentence.insert(std::unordered_map<std::string, int>::value_type(split_word[i], i));
-		}
 	}
 };
 
-void HashItem::print_key_word(vector<string> key_word) {
-	DWORD start_time = timeGetTime();
-	vector<string> print_value = sentence;
-	for (int i = 0; i < key_word.size(); i++) {
-		if (hash_sentence.count(key_word[i])) {
-			print_value[hash_sentence[key_word[i]]] = "==========" + print_value[hash_sentence[key_word[i]]] +
-				"==========";
-		}
-	}
-
-	for (int k = 0; k < print_value.size(); k++) {
-		cout << print_value[k] << " ";
-	}
-	cout << "\n\n             =========포스팅 완료==========" << endl;
-	DWORD end_time = timeGetTime();
-
-	cout << "Hash를 통한 포스팅 시간측정 : " << end_time - start_time << "ms 소요\n\n" << endl;
-
+void HashItem::print_key_word(std::vector<std::wstring> key_word) {
+	vector<wstring> print_value = sentence;
 	DWORD st_time = timeGetTime();
 	print_value = sentence;
 	for (int i = 0; i < print_value.size(); i++) {
@@ -81,18 +61,18 @@ void HashItem::print_key_word(vector<string> key_word) {
 				t_f = true;
 		}
 		if (t_f) {
-			cout << "==========" << print_value[i] << "========== ";
+			wcout << "==========" << print_value[i] << "========== ";
 		}
 		else
-			cout << print_value[i] << " ";
+			wcout << print_value[i] << " ";
 	}
 	DWORD ed_time = timeGetTime();
 	cout << "\n\n             =========포스팅 완료==========" << endl;
-	cout << "Linear 출력 결과" << ed_time - st_time << "ms 소요\n\n" << endl;
+	cout << "출력 결과" << ed_time - st_time << "ms 소요\n\n" << endl;
 
 }
 
-void MergeSort(vector<int> &alist) {
+void MergeSort(std::vector<int> &alist) {
 	if (alist.size() > 1) {
 		int mid = alist.size() / 2;
 
@@ -131,6 +111,16 @@ void MergeSort(vector<int> &alist) {
 
 }
 
+int MyHash(std::wstring keyword) {
+
+	int retval = 0;
+	for (int i = 0; i < keyword.size(); i++)
+		retval = (retval << 3) + keyword[i];
+	retval = retval % 5000;
+
+	return retval;
+}
+
 std::map<int, std::vector<int>> Score_f(std::vector<int> Search_vector) {
 	
 	std::map<int, std::vector<int>> my_score;
@@ -157,38 +147,55 @@ std::map<int, std::vector<int>> Score_f(std::vector<int> Search_vector) {
 	return my_score;
 }
 
+struct hash_chain {
+	std::wstring keyword;
+	std::vector<int> lines;
+	hash_chain() :hash_chain(L"a") {};
+	hash_chain(std::wstring key) { keyword = key; }
+
+};
+
+
 #pragma comment(lib,"winmm.lib")
-typedef std::unordered_map<string, vector<int> > Mymap;
+
+typedef std::map<int, std::vector<hash_chain>> Mymap;
 
 void main() {
-	setlocale(LC_ALL, "Korean");	
+	setlocale(LC_ALL, "Korean");
+	_wsetlocale(LC_ALL, L"Korean");
+
 	Mymap keyword_hash_table;
 	cout << "데이터 불러오는중...." << endl;
 
 	//Hashing
-	ifstream word;
-	word.open("word_set.txt", ios::app);
+	wifstream word;
+	word.open("word_set.txt", wios::app);
+	word.imbue(std::locale("Korean"));
 
 	while (!word.eof()) {
-		char temp[30];
+		wchar_t temp[30];
 		word.getline(temp, 30);
-		string text = temp;
+		wstring text = temp;
 		rtrim(text);
-		keyword_hash_table.insert(Mymap::value_type(text, NULL));
+		int hashkey = MyHash(text);
+		if (!keyword_hash_table.count(hashkey)) {
+			keyword_hash_table.insert(Mymap::value_type(hashkey, NULL));
 		}
+		keyword_hash_table.at(hashkey).push_back(hash_chain(text));
+	}
 	word.close();
 
-	ifstream stream;
+	wifstream stream;
 	stream.imbue(std::locale("korean"));
-	stream.open("document.txt", ios::app);
+	stream.open("document.txt", wios::app);
 
 	vector<HashItem> item_data;
 	int line_count = 0;
 
 	while (!stream.eof()) {
-		char temp[8000];
+		wchar_t temp[8000];
 		stream.getline(temp,8000);
-		std::vector<std::string> split_line = split(rtrim(string(temp)), ' ');
+		std::vector<std::wstring> split_line = split(rtrim(wstring(temp)), ' ');
 		item_data.push_back(HashItem(line_count, split_line));
 		line_count++;
 	}
@@ -199,7 +206,15 @@ void main() {
 	cout << "Indexing 진행 중..." <<  endl;
 	for (int line = 0; line < item_data.size(); line++) {
 		for (int split = 0; split < item_data[line].sentence.size(); split++) {
-			keyword_hash_table.at(item_data[line].sentence[split]).push_back(line);
+
+			int hashkey = MyHash(item_data[line].sentence[split]);
+			
+			for (int k = 0; k < keyword_hash_table.at(hashkey).size();k++) {
+
+				if (keyword_hash_table.at(hashkey)[k].keyword == item_data[line].sentence[split])
+					keyword_hash_table.at(hashkey)[k].lines.push_back(line);
+			}
+
 		}
 	}
 	cout << "Indexing 완료!" << endl;
@@ -207,26 +222,30 @@ void main() {
 
 	//Searching
 	while (1) {
-		std::vector<std::string> keyword_input;
+		std::vector<std::wstring> keyword_input;
 		while (1) {
-			std::string input_v;
+			std::wstring input_v;
 			cout << "====검색어 입력====      (끝내려면 x)" << endl;
-			cin >> input_v;
-			if (input_v == "x") {
+			wcin >> input_v;
+			if (input_v == L"x") {
 				cout << "=============입력 완료=============" << endl;
 				break;
 			}
 			keyword_input.push_back(input_v);
-			cout << "검색어(" << input_v << ") 입력" << endl;
+			wcout << L"검색어(" << input_v << L") 입력" << endl;
 		}
 
 		DWORD start_time = timeGetTime();
 
 		std::vector<int> Searching;
 		for (int i = 0; i < keyword_input.size(); i++) {
-			Searching.insert(Searching.end(), keyword_hash_table.at(keyword_input[i]).begin(), keyword_hash_table[keyword_input[i]].end());
+			int hashkey = MyHash(keyword_input[i]);
+
+			for (int j = 0; j < keyword_hash_table.at(hashkey).size(); j++) {
+				if(keyword_input[i] == keyword_hash_table.at(hashkey)[j].keyword)
+					Searching.insert(Searching.end(), keyword_hash_table.at(hashkey)[j].lines.begin(), keyword_hash_table.at(hashkey)[j].lines.end());
+			}
 		}
-		
 		//Sorting
 		MergeSort(Searching);
 		
@@ -235,6 +254,8 @@ void main() {
 
 
 		DWORD end_time = timeGetTime();
+
+
 		auto it = Score.cend();
 		it--;
 		cout << "검색 시간 : " << end_time - start_time << "ms 소요되었음" << endl;
